@@ -181,3 +181,26 @@ print(data.info())
 print(data.head())
 print("Rows and Columns:", data.shape)
 
+
+#Show descriptive stats for the goal difference and the other variables
+goal_diff = data["Goal_Diff"]
+print("Goal Difference and Variables Descriptive Stats:")
+print(data.drop(["Match_ID"], axis=1).describe())
+print("Goal Difference Median:", statistics.median(goal_diff))
+print("Goal Difference Mode:", statistics.mode(goal_diff))
+
+#Calculate the mean and 95% confidence interval for the goal difference
+gd_mean = stats.tmean(goal_diff)
+gd_error = stats.tstd(goal_diff) / math.sqrt(len(goal_diff))
+gd_low, gd_high = statsm._zconfint_generic(gd_mean, gd_error, alpha=0.05, alternative="two-sided")
+print("Goal Difference Mean:", gd_mean)
+print("Goal Difference 95% Confidence Interval:", gd_low, "to", gd_high)
+
+#Find any outliers in the goal difference using the IQR method
+q1 = np.percentile(goal_diff, 25)
+q3 = np.percentile(goal_diff, 75)
+iqr = q3 - q1
+low = q1 - 1.5 * iqr
+high = q3 + 1.5 * iqr
+print("Number of Goal Difference Outliers:", len(goal_diff[goal_diff < low]) + len(goal_diff[goal_diff > high]))
+
