@@ -199,11 +199,17 @@ else:
     print("Do not reject Hypothesis")
 
 #Histogram of Goals to check the shape of the distribution
-plt.hist(goals, bins=int(goals.max() + 1), edgecolor="black")
-plt.title("Goals Scored by a Team in World Cup 2026 Matches")
+plt.figure(figsize=(8, 4.5))
+plt.hist(goals, bins=np.arange(-0.5, goals.max() + 1.5, 1), edgecolor="black")
+plt.axvline(goals_mean, color="red", linestyle="--", label="Mean = " + str(round(goals_mean, 2)))
+plt.axvspan(math.floor(upper) + 0.5, goals.max() + 0.5, color="orange", alpha=0.25,
+            label="IQR outliers (real results, kept)")
+plt.title("Goals Scored by a Team in World Cup 2026 Matches (n = 208)")
 plt.xlabel("Goals")
 plt.ylabel("No. of Team-Matches (rows)")
-plt.savefig("../figures/2.2_histogram.png", dpi=150)
+plt.legend()
+plt.tight_layout()
+plt.savefig("../figures/2.2_histogram.png", dpi=300)
 plt.show()
 
 #Scatter plot of each candidate variable against goals and its Pearson correlation
