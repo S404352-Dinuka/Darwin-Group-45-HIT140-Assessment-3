@@ -278,3 +278,10 @@ for column in ["Playoff", "Fr_GF", "Opp_Strong_Conf"]:
     model = sm.OLS(var_y, sm.add_constant(x_reduced)).fit()
     print("Model 4 summary after removing", column)
     print(model.summary())
+
+#add Model 5 with Yeo-Johnson transformation and baseline comparison across multiple algorithms
+model_names = ["Baseline", "M1: All 8", "M2: Standardised", "M3: Yeo-Johnson",
+               "M4: 5 significant", "M5: 5 sig. + Yeo-Johnson", "Ridge: All 8", "Random Forest: All 8"]
+model_x = [var_x, var_x, var_x, var_x, x_reduced, x_reduced, var_x, var_x]
+model_scale = ["none", "none", "standard", "yeo-johnson", "none", "yeo-johnson", "standard", "none"]
+model_algo = ["mean", "linear", "linear", "linear", "linear", "linear", "ridge", "forest"]
