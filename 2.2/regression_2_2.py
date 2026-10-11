@@ -85,3 +85,7 @@ for match_table in [friendly_matches, world_cup]:
 fr_results = results[0]
 wc_results = results[1]
 print("World Cup rows (2 per match):", wc_results.shape)
+
+#Congo DR and Iraq are listed twice, so remove their earlier play-off round
+qualification = qualification[qualification["Method"] != "Defeated ng Nigeria"]
+qualification = qualification[qualification["Method"] != "Defeated ae United Arab Emirates"]
