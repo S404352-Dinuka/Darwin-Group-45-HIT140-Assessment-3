@@ -133,3 +133,27 @@ for team in strong_conf:
     fr_gf[team] = team_games["GF"].mean()
     fr_ga[team] = team_games["GA"].mean()
     fr_ppg[team] = team_games["Points"].mean()
+
+"""
+Build the modelling dataset: one row per team per match (104 x 2 = 208 rows). 
+Columns starting with Opponent describe the opponent, the others describe the team. 
+All values come from qualification or friendlies, so they are known before kickoff here
+"""
+rows = []
+for i in range(len(wc_results)):
+    team = wc_results["Team"].iloc[i]
+    opp = wc_results["Opponent"].iloc[i]
+    rows.append([wc_results["Match_ID"].iloc[i], team,
+                 strong_conf[team], strong_conf[opp],
+                 playoff[team], playoff[opp],
+                 fr_games[team], fr_games[opp],
+                 fr_gf[team], fr_ga[opp],
+                 fr_ppg[team], fr_ppg[opp],
+                 wc_results["GF"].iloc[i]])
+
+data = pd.DataFrame(rows, columns=["Match_ID", "Team", "Strong_Conf", "Opp_Strong_Conf",
+                                   "Playoff", "Opp_Playoff", "Fr_Games", "Opp_Fr_Games",
+                                   "Fr_GF", "Opp_Fr_GA", "Fr_PPG", "Opp_Fr_PPG", "Goals"])
+print(data.info())
+print(data.head())
+print("Rows and Columns:", data.shape)
