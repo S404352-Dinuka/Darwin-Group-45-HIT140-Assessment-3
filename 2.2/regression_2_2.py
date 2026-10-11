@@ -359,3 +359,12 @@ results = pd.DataFrame({"Model": model_names, "Average RMSE": avg_rmse, "RMSE (N
 print("Average performance over 20 train/test splits and the knockout forecast test:")
 print(results)
 results.to_csv("../figures/2.2_model_comparison.csv", index=False)
+
+#Box plot of the RMSE of each model from the 20 splits
+plt.figure(figsize=(10, 6))
+sns.boxplot(data=rmse_table, orient="h")
+plt.title("RMSE of Each Model over 20 Train/Test Splits (lower is better)")
+plt.xlabel("RMSE (goals)")
+plt.tight_layout()
+plt.savefig("../figures/2.2_rmse_boxplot.png", dpi=150)
+plt.show()
