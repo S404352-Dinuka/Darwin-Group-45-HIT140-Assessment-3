@@ -115,3 +115,21 @@ for i in range(len(qualification)):
     playoff[team] = 0
     if "Second round" in competition or "Fourth round" in competition or "Fifth round" in competition or "Inter-confederation" in competition:
         playoff[team] = 1
+
+
+#Friendly results of each World Cup team before the World Cup
+#Games = number of friendly_matches played, GF = average goals scored, GA = average goals conceded, PPG = average points
+fr_games = {}
+fr_gf = {}
+fr_ga = {}
+fr_ppg = {}
+total_goals = 0
+total_games = 0
+for team in strong_conf:
+    team_games = fr_results[fr_results["Team"] == team]
+    total_goals = total_goals + team_games["GF"].sum()
+    total_games = total_games + len(team_games)
+    fr_games[team] = len(team_games)
+    fr_gf[team] = team_games["GF"].mean()
+    fr_ga[team] = team_games["GA"].mean()
+    fr_ppg[team] = team_games["Points"].mean()
