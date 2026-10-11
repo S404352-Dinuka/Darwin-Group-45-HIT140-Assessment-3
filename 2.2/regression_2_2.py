@@ -143,13 +143,8 @@ rows = []
 for i in range(len(wc_results)):
     team = wc_results["Team"].iloc[i]
     opp = wc_results["Opponent"].iloc[i]
-    rows.append([wc_results["Match_ID"].iloc[i], team,
-                 strong_conf[team], strong_conf[opp],
-                 playoff[team], playoff[opp],
-                 fr_games[team], fr_games[opp],
-                 fr_gf[team], fr_ga[opp],
-                 fr_ppg[team], fr_ppg[opp],
-                 wc_results["GF"].iloc[i]])
+    rows.append([wc_results["Match_ID"].iloc[i], team, strong_conf[team], strong_conf[opp], playoff[team], playoff[opp],
+                 fr_games[team], fr_games[opp], fr_gf[team], fr_ga[opp], fr_ppg[team], fr_ppg[opp], wc_results["GF"].iloc[i]])
 
 data = pd.DataFrame(rows, columns=["Match_ID", "Team", "Strong_Conf", "Opp_Strong_Conf",
                                    "Playoff", "Opp_Playoff", "Fr_Games", "Opp_Fr_Games",
@@ -232,4 +227,178 @@ sns.heatmap(corr, vmin=-1, vmax=1, center=0, cmap=sns.diverging_palette(20, 220,
 plt.xticks(rotation=45, horizontalalignment="right")
 plt.tight_layout()
 plt.savefig("../figures/2.2_heatmap.png", dpi=150)
+plt.show()
+
+#Fr_PPG is highly correlated (r > 0.7) with Fr_GF and Opp_Fr_PPG is strongly correlated with Opp_Fr_GA
+#Friendly points per game is also already used in 2.1 and only 4 variables can be shared with 2.1
+#So drop Fr_PPG and Opp_Fr_PPG and keep the goal based friendly variables
+print("Fr_PPG vs Fr_GF:", corr["Fr_PPG"]["Fr_GF"])
+print("Opp_Fr_PPG vs Opp_Fr_GA:", corr["Opp_Fr_PPG"]["Opp_Fr_GA"])
+data = data.drop(["Fr_PPG", "Opp_Fr_PPG"], axis=1)
+data.to_csv("../data/processed/regression_2_2_dataset.csv", index=False)
+
+#Divide the x and y variables and show the 8 used variables
+var_x = data.drop(["Match_ID", "Team", "Goals"], axis=1)
+var_y = data["Goals"]
+print("Explanatory variables:", var_x.keys())
+
+#Model 1 with all 8 variables using all the rows
+model = sm.OLS(var_y, sm.add_constant(var_x)).fit()
+print("Model 1 summary:")
+print(model.summary())
+
+#Model 2 with z score standardisation to see which variables have the biggest effect
+std_x = pd.DataFrame(StandardScaler().fit_transform(var_x), columns=var_x.columns)
+model = sm.OLS(var_y, sm.add_constant(std_x)).fit()
+print("Model 2 summary:")
+print(model.summary())
+
+#Creating the bar chart of the standardised coefficients
+plt.figure(figsize=(10, 5))
+plt.bar(var_x.keys(), model.params[1:])
+plt.ylabel("Standardised coefficient")
+plt.title("Effect of Each Variable on Goals Scored (bigger bar = stronger effect)")
+plt.xticks(rotation=20, horizontalalignment="right")
+plt.tight_layout()
+plt.savefig("../figures/2.2_coefficients.png", dpi=150)
+plt.show()
+
+#Model 3 with the Yeo-Johnson transformation
+yj_columns = ["Fr_Games","Opp_Fr_Games","Fr_GF","Opp_Fr_GA"]
+power_x = var_x.copy()
+power_x[yj_columns] = PowerTransformer().fit_transform(var_x[yj_columns])
+model = sm.OLS(var_y, sm.add_constant(power_x)).fit()
+print("Model 3 summary:")
+print(model.summary())
+
+#Model 4: sequentially remove variables with the highest p-value
+x_reduced = var_x
+for column in ["Playoff", "Fr_GF", "Opp_Strong_Conf"]:
+    x_reduced = x_reduced.drop([column], axis=1)
+    model = sm.OLS(var_y, sm.add_constant(x_reduced)).fit()
+    print("Model 4 summary after removing", column)
+    print(model.summary())
+
+#add Model 5 with Yeo-Johnson transformation and baseline comparison across multiple algorithms
+model_names = ["Baseline", "M1: All 8", "M2: Standardised", "M3: Yeo-Johnson",
+               "M4: 5 significant", "M5: 5 sig. + Yeo-Johnson", "Ridge: All 8", "Random Forest: All 8"]
+model_x = [var_x, var_x, var_x, var_x, x_reduced, x_reduced, var_x, var_x]
+model_scale = ["none", "none", "standard", "yeo-johnson", "none", "yeo-johnson", "standard", "none"]
+model_algo = ["mean", "linear", "linear", "linear", "linear", "linear", "ridge", "forest"]
+
+#evaluate all models on 20 train/test splits and the knockout forecast test
+rmse_lists = [[], [], [], [], [], [], [], []]
+r2_lists = [[], [], [], [], [], [], [], []]
+forecast_rmse = []
+forecast_r2 = []
+for seed in range(21):
+    for m in range(8):
+        if seed < 20:
+            train_x, test_x, train_y, test_y = train_test_split(model_x[m], var_y, test_size=0.4, random_state=seed)
+        else:
+            train_x = model_x[m][data["Match_ID"] <= 72]
+            test_x = model_x[m][data["Match_ID"] > 72]
+            train_y = var_y[data["Match_ID"] <= 72]
+            test_y = var_y[data["Match_ID"] > 72]
+        if model_scale[m] == "standard":
+            scaler = StandardScaler()
+            train_x = scaler.fit_transform(train_x)
+            test_x = scaler.transform(test_x)
+        if model_scale[m] == "yeo-johnson":
+            columns = []
+            for column in train_x.keys():
+                if column in yj_columns:
+                    columns.append(column)
+            scaler = PowerTransformer()
+            train_x = train_x.copy()
+            test_x = test_x.copy()
+            train_x[columns] = scaler.fit_transform(train_x[columns])
+            test_x[columns] = scaler.transform(test_x[columns])
+        if model_algo[m] == "mean":
+            pred_y = [np.mean(train_y)] * len(test_y)
+        else:
+            if model_algo[m] == "linear":
+                model = LinearRegression()
+            if model_algo[m] == "ridge":
+                model = Ridge(alpha=10)
+            if model_algo[m] == "forest":
+                model = RandomForestRegressor(n_estimators=100, min_samples_leaf=5, random_state=0)
+            model.fit(train_x, train_y)
+            pred_y = model.predict(test_x)
+        rmse = math.sqrt(metrics.mean_squared_error(test_y, pred_y))
+        r2 = metrics.r2_score(test_y, pred_y)
+        if seed < 20:
+            rmse_lists[m].append(rmse)
+            r2_lists[m].append(r2)
+        else:
+            forecast_rmse.append(rmse)
+            forecast_r2.append(r2)
+
+#Put the average RMSE, normalised RMSE and R2 of each model in to a table
+#One sample t test on the 20 RMSE differences (model - M1): is the model really different from M1?
+avg_rmse = []
+norm_rmse = []
+avg_r2 = []
+p_values = []
+rmse_table = pd.DataFrame()
+for m in range(8):
+    avg_rmse.append(np.mean(rmse_lists[m]))
+    norm_rmse.append(np.mean(rmse_lists[m])/(var_y.max() - var_y.min()))
+    avg_r2.append(np.mean(r2_lists[m]))
+    rmse_table[model_names[m]] = rmse_lists[m]
+    difference = []
+    for i in range(20):
+        difference.append(rmse_lists[m][i] - rmse_lists[1][i])
+    if m == 1 or m == 2:
+        p_values.append("same as M1")
+    else:
+        t_stats, p_val = stats.ttest_1samp(difference, 0)
+        p_values.append(round(p_val, 4))
+results = pd.DataFrame({"Model": model_names, "Average RMSE": avg_rmse, "RMSE (Normalised)": norm_rmse, "Average R2": avg_r2,
+                        "P-Val vs M1": p_values, "Knockout RMSE": forecast_rmse, "Knockout R2": forecast_r2})
+print("Average performance over 20 train/test splits and the knockout forecast test:")
+print(results)
+results.to_csv("../figures/2.2_model_comparison.csv", index=False)
+
+#Box plot of the RMSE of each model from the 20 splits
+plt.figure(figsize=(10, 6))
+sns.boxplot(data=rmse_table, orient="h")
+plt.title("RMSE of Each Model over 20 Train/Test Splits (lower is better)")
+plt.xlabel("RMSE (goals)")
+plt.tight_layout()
+plt.savefig("../figures/2.2_rmse_boxplot.png", dpi=150)
+plt.show()
+
+
+#Final model: Ridge with all 8 variables, the only model significantly better than M1
+#The variables are standardised, so each coefficient is the change in goals for a 1 standard deviation change
+scaler = StandardScaler()
+final_model = Ridge(alpha=10)
+final_model.fit(scaler.fit_transform(var_x), var_y)
+print("Final model (Ridge) intercept:", final_model.intercept_)
+coefficients = pd.DataFrame({"Variable": var_x.keys(), "Coefficient (per 1 SD)": final_model.coef_})
+print(coefficients)
+
+#Plot the actual vs predicted values and the residuals (errors) of the final model on one test split
+train_x, test_x, train_y, test_y = train_test_split(var_x, var_y, test_size=0.4, random_state=0)
+scaler = StandardScaler()
+model = Ridge(alpha=10)
+model.fit(scaler.fit_transform(train_x), train_y)
+pred_y = model.predict(scaler.transform(test_x))
+residuals = test_y - pred_y
+plt.figure(figsize=(11, 4.5))
+plt.subplot(1, 2, 1)
+plt.scatter(test_y, pred_y)
+plt.plot([0, 7], [0, 7], color="red")
+plt.title("Final Model: Actual vs Predicted Goals")
+plt.xlabel("Actual Goals")
+plt.ylabel("Predicted Goals")
+plt.subplot(1, 2, 2)
+plt.scatter(pred_y, residuals)
+plt.plot([min(pred_y), max(pred_y)], [0, 0], color="red")
+plt.title("Residuals (should be spread evenly around 0)")
+plt.xlabel("Predicted Goals")
+plt.ylabel("Residual (Actual - Predicted)")
+plt.tight_layout()
+plt.savefig("../figures/2.2_final_model.png", dpi=150)
 plt.show()
