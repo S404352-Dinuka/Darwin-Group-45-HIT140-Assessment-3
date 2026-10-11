@@ -187,3 +187,18 @@ if p_val < 0.05:
     print("Reject Hypothesis")
 else:
     print("Do not reject Hypothesis")
+
+"""
+Two-sample Welch’s t-test (unequal variances, one-sided). 
+H0: UEFA/CONMEBOL teams do not score more goals than other teams
+"""
+strong = goals[data["Strong_Conf"] == 1]
+others = goals[data["Strong_Conf"] == 0]
+t_stats, p_val = stats.ttest_ind_from_stats(stats.tmean(strong), stats.tstd(strong), len(strong),
+                                            stats.tmean(others), stats.tstd(others), len(others),
+                                            equal_var=False, alternative="greater")
+print("Two sample t test  T Stats:", t_stats, " P-Val:", p_val)
+if p_val < 0.05:
+    print("Reject Hypothesis")
+else:
+    print("Do not reject Hypothesis")
