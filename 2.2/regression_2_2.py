@@ -368,3 +368,37 @@ plt.xlabel("RMSE (goals)")
 plt.tight_layout()
 plt.savefig("../figures/2.2_rmse_boxplot.png", dpi=150)
 plt.show()
+
+
+#Final model: Ridge with all 8 variables, the only model significantly better than M1
+#The variables are standardised, so each coefficient is the change in goals for a 1 standard deviation change
+scaler = StandardScaler()
+final_model = Ridge(alpha=10)
+final_model.fit(scaler.fit_transform(var_x), var_y)
+print("Final model (Ridge) intercept:", final_model.intercept_)
+coefficients = pd.DataFrame({"Variable": var_x.keys(), "Coefficient (per 1 SD)": final_model.coef_})
+print(coefficients)
+
+#Plot the actual vs predicted values and the residuals (errors) of the final model on one test split
+train_x, test_x, train_y, test_y = train_test_split(var_x, var_y, test_size=0.4, random_state=0)
+scaler = StandardScaler()
+model = Ridge(alpha=10)
+model.fit(scaler.fit_transform(train_x), train_y)
+pred_y = model.predict(scaler.transform(test_x))
+residuals = test_y - pred_y
+plt.figure(figsize=(11, 4.5))
+plt.subplot(1, 2, 1)
+plt.scatter(test_y, pred_y)
+plt.plot([0, 7], [0, 7], color="red")
+plt.title("Final Model: Actual vs Predicted Goals")
+plt.xlabel("Actual Goals")
+plt.ylabel("Predicted Goals")
+plt.subplot(1, 2, 2)
+plt.scatter(pred_y, residuals)
+plt.plot([min(pred_y), max(pred_y)], [0, 0], color="red")
+plt.title("Residuals (should be spread evenly around 0)")
+plt.xlabel("Predicted Goals")
+plt.ylabel("Residual (Actual - Predicted)")
+plt.tight_layout()
+plt.savefig("../figures/2.2_final_model.png", dpi=150)
+plt.show()
