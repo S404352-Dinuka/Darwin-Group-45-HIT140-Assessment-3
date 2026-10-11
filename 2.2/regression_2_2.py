@@ -177,3 +177,13 @@ goals_mean = stats.tmean(goals)
 goals_error = stats.tstd(goals) / math.sqrt(len(goals))
 goals_low, goals_high = statsm._zconfint_generic(goals_mean, goals_error, alpha=0.05, alternative="two-sided")
 print("Goals Mean:", goals_mean, " 95% Confidence Interval:", goals_low, "to", goals_high)
+
+#One sample t test: is the mean World Cup goals different from the mean friendly goals?
+friendly_mean = total_goals / total_games
+print("Average goals per game of the World Cup teams in friendly matches:", friendly_mean)
+t_stats, p_val = stats.ttest_1samp(goals, friendly_mean)
+print("One sample t test  T Stats:", t_stats, " P-Val:", p_val)
+if p_val < 0.05:
+    print("Reject Hypothesis")
+else:
+    print("Do not reject Hypothesis")
