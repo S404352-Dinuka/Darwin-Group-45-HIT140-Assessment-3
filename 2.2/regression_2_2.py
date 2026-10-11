@@ -199,84 +199,35 @@ else:
     print("Do not reject Hypothesis")
 
 #Histogram of Goals to check the shape of the distribution
-plt.figure(figsize=(8, 4.5))
-plt.hist(goals, bins=np.arange(-0.5, goals.max() + 1.5, 1), edgecolor="black")
-plt.axvline(goals_mean, color="red", linestyle="--", label="Mean = " + str(round(goals_mean, 2)))
-plt.axvspan(math.floor(upper) + 0.5, goals.max() + 0.5, color="orange", alpha=0.25,
-            label="IQR outliers (real results, kept)")
-plt.title("Goals Scored by a Team in World Cup 2026 Matches (n = 208)")
+plt.hist(goals, bins=int(goals.max() + 1), edgecolor="black")
+plt.title("Goals Scored by a Team in World Cup 2026 Matches")
 plt.xlabel("Goals")
 plt.ylabel("No. of Team-Matches (rows)")
-plt.legend()
-plt.tight_layout()
-plt.savefig("../figures/2.2_histogram.png", dpi=300)
+plt.savefig("../figures/2.2_histogram.png", dpi=150)
 plt.show()
 
-#Scatter plot of each numeric candidate against goals with a fitted line to check linearity
+#Scatter plot of each candidate variable against goals and its Pearson correlation
 columns = data.keys()[2:-1]
-for column in columns:
-    r, p_value = stats.pearsonr(data[column], goals)
-    print(column, " r =", r, " p-value =", p_value)
-
-numeric_columns = []
-for column in columns:
-    if data[column].nunique() > 2:
-        numeric_columns.append(column)
-plt.figure(figsize=(14, 7.5))
-for i in range(len(numeric_columns)):
-    column = numeric_columns[i]
-    r, p_value = stats.pearsonr(data[column], goals)
-    line_model = LinearRegression()
-    line_model.fit(data[[column]], goals)
-    slope = line_model.coef_[0]
-    intercept = line_model.intercept_
-    x_line = np.linspace(data[column].min(), data[column].max(), 50)
-    plt.subplot(2, 3, i + 1)
-    plt.scatter(data[column], goals, alpha=0.4)
-    plt.plot(x_line, intercept + slope * x_line, color="red")
-    plt.title(column + "  (r = " + str(round(r, 2)) + ", p = " + str(round(p_value, 4)) + ")")
-    plt.xlabel(column)
+plt.figure(figsize=(16, 7))
+for i in range(len(columns)):
+    r, p_value = stats.pearsonr(data[columns[i]], goals)
+    print(columns[i], " r =", r, " p-value =", p_value)
+    plt.subplot(2, 5, i + 1)
+    plt.scatter(data[columns[i]], goals)
+    plt.xlabel(columns[i])
     plt.ylabel("Goals")
-plt.suptitle("Numeric Candidate Variables vs Goals Scored (red line = linear fit)")
 plt.tight_layout()
-plt.savefig("../figures/2.2_scatter.png", dpi=300)
-plt.show()
-
-#Mean goals with 95% confidence intervals for each yes/no variable, with a two sample (Welch) t test p-value
-binary_columns = ["Strong_Conf", "Opp_Strong_Conf", "Playoff", "Opp_Playoff"]
-plt.figure(figsize=(13, 4.5))
-for i in range(len(binary_columns)):
-    column = binary_columns[i]
-    means = []
-    errors = []
-    for value in [0, 1]:
-        group = goals[data[column] == value]
-        means.append(stats.tmean(group))
-        errors.append(1.96 * stats.tstd(group) / math.sqrt(len(group)))
-    yes = goals[data[column] == 1]
-    no = goals[data[column] == 0]
-    t_stats, p_val = stats.ttest_ind_from_stats(stats.tmean(yes), stats.tstd(yes), len(yes),
-                                                stats.tmean(no), stats.tstd(no), len(no), equal_var=False)
-    plt.subplot(1, 4, i + 1)
-    plt.bar(["No (0)", "Yes (1)"], means, yerr=errors, capsize=6, color=["#9bb7d4", "#1f5f99"])
-    plt.text(0, 0.12, str(round(means[0], 2)), ha="center")
-    plt.text(1, 0.12, str(round(means[1], 2)), ha="center", color="white")
-    plt.title(column + "\n(two-sided t test p = " + str(round(p_val, 3)) + ")")
-    plt.ylim(0, 3)
-    plt.ylabel("Mean goals (95% CI)")
-plt.suptitle("Mean Goals Scored for Each Yes/No Variable")
-plt.tight_layout()
-plt.savefig("../figures/2.2_binary_ttests.png", dpi=300)
+plt.savefig("../figures/2.2_scatter.png", dpi=150)
 plt.show()
 
 #Heatmap of the correlation matrix to check collinearity
 corr = data.drop(["Match_ID", "Team"], axis=1).corr()
 plt.figure(figsize=(11, 9))
-sns.heatmap(corr, vmin=-1, vmax=1, center=0, cmap=sns.diverging_palette(20, 220, n=200), annot=True, fmt=".2f")
+sns.heatmap(corr, vmin=-1, vmax=1, center=0, cmap=sns.diverging_palette(20, 220, n=200), annot=True)
 plt.xticks(rotation=45, horizontalalignment="right")
-plt.title("Correlation Matrix of the 10 Candidate Variables and Goals")
 plt.tight_layout()
-plt.savefig("../figures/2.2_heatmap.png", dpi=300)
+plt.savefig("../figures/2.2_heatmap.png", dpi=150)
+plt.show()
 
 #Fr_PPG is highly correlated (r > 0.7) with Fr_GF and Opp_Fr_PPG is strongly correlated with Opp_Fr_GA
 #Friendly points per game is also already used in 2.1 and only 4 variables can be shared with 2.1
