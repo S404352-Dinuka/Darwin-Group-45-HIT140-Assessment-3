@@ -333,3 +333,29 @@ for seed in range(21):
         else:
             forecast_rmse.append(rmse)
             forecast_r2.append(r2)
+
+#Put the average RMSE, normalised RMSE and R2 of each model in to a table
+#One sample t test on the 20 RMSE differences (model - M1): is the model really different from M1?
+avg_rmse = []
+norm_rmse = []
+avg_r2 = []
+p_values = []
+rmse_table = pd.DataFrame()
+for m in range(8):
+    avg_rmse.append(np.mean(rmse_lists[m]))
+    norm_rmse.append(np.mean(rmse_lists[m])/(var_y.max() - var_y.min()))
+    avg_r2.append(np.mean(r2_lists[m]))
+    rmse_table[model_names[m]] = rmse_lists[m]
+    difference = []
+    for i in range(20):
+        difference.append(rmse_lists[m][i] - rmse_lists[1][i])
+    if m == 1 or m == 2:
+        p_values.append("same as M1")
+    else:
+        t_stats, p_val = stats.ttest_1samp(difference, 0)
+        p_values.append(round(p_val, 4))
+results = pd.DataFrame({"Model": model_names, "Average RMSE": avg_rmse, "RMSE (Normalised)": norm_rmse, "Average R2": avg_r2,
+                        "P-Val vs M1": p_values, "Knockout RMSE": forecast_rmse, "Knockout R2": forecast_r2})
+print("Average performance over 20 train/test splits and the knockout forecast test:")
+print(results)
+results.to_csv("../figures/2.2_model_comparison.csv", index=False)
