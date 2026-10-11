@@ -136,3 +136,48 @@ for opponent in fr_results["Opponent"]:
         opp_wc_list.append(0)
 fr_results["Opp_WC"] = opp_wc_list
 
+
+#Calculating the difference between the two teams and get both teams from the two rows stored for each match
+rows = []
+for i in range(0, len(wc_results), 2):
+    team1 = wc_results["Team"].iloc[i]
+    team2 = wc_results["Team"].iloc[i + 1]
+    date = wc_results["Date"].iloc[i]
+    fr1 = fr_results[fr_results["Team"] == team1]
+    fr2 = fr_results[fr_results["Team"] == team2]
+    #Get only the previous World Cup match results for each team
+    wc1 = wc_results[wc_results["Team"] == team1]
+    wc1 = wc1[wc1["Date"] < date]
+    wc2 = wc_results[wc_results["Team"] == team2]
+    wc2 = wc2[wc2["Date"] < date]
+
+    #Calculate the differences 
+    row = [len(rows) + 1,
+           host[team1] - host[team2],
+           strong_conf[team1] - strong_conf[team2],
+           playoff[team1] - playoff[team2],
+           fr1["Points"].mean() - fr2["Points"].mean(),
+           fr1["GF"].mean() - fr2["GF"].mean(),
+           fr1["GA"].mean() - fr2["GA"].mean(),
+           fr1["Opp_WC"].mean() - fr2["Opp_WC"].mean()]
+    #If first world cup, set to 0
+    if len(wc1) == 0:
+        row = row + [0, 0, 0]
+    else:
+        row = row + [wc1["Points"].mean() - wc2["Points"].mean(),
+                     wc1["GF"].mean() - wc2["GF"].mean(),
+                     wc1["GA"].mean() - wc2["GA"].mean()]
+
+    #Calculate the actual goal difference between the two teams
+    row.append(wc_results["GF"].iloc[i] - wc_results["GA"].iloc[i])
+    rows.append(row)
+
+#Put all match rows into one table with the column names
+data = pd.DataFrame(rows, columns=["Match_ID", "Host_Diff", "Conf_Diff", "Playoff_Diff",
+                                   "Fr_PPG_Diff", "Fr_GF_Diff", "Fr_GA_Diff", "Fr_Opp_Diff",
+                                   "WC_PPG_Diff", "WC_GF_Diff", "WC_GA_Diff", "Goal_Diff"])
+print("Check Regression Data")
+print(data.info())
+print(data.head())
+print("Rows and Columns:", data.shape)
+
