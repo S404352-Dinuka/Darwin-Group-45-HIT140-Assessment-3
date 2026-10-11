@@ -92,3 +92,26 @@ qualification = qualification[qualification["Method"] != "Defeated ae United Ara
 
 #hosts have NaN in Comp, so replace NaN with an empty string
 qualification = qualification.fillna("")
+
+"""
+Store the strong confederation and play off info of each team in dictionaries
+Strong confederation = UEFA (Europe) or CONMEBOL (South America)
+"""
+strong_conf = {}
+playoff = {}
+for i in range(len(qualification)):
+    team = " ".join(qualification["Squad"].iloc[i].split(" ")[1:])
+    #These 2 team names are written differently in this file, so that the match them to the match tables
+    if team == "Bosnia and Herzegovina":
+        team = "Bosnia–Herz"
+    if team == "United States":
+        team = "USA"
+    confederation = qualification["Confederation"].iloc[i]
+    competition = qualification["Comp"].iloc[i]
+
+    strong_conf[team] = 0
+    if confederation == "UEFA" or confederation == "CONMEBOL":
+        strong_conf[team] = 1
+    playoff[team] = 0
+    if "Second round" in competition or "Fourth round" in competition or "Fifth round" in competition or "Inter-confederation" in competition:
+        playoff[team] = 1
