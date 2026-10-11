@@ -224,3 +224,12 @@ for i in range(len(columns)):
 plt.tight_layout()
 plt.savefig("../figures/2.2_scatter.png", dpi=150)
 plt.show()
+
+#Heatmap of the correlation matrix to check collinearity
+corr = data.drop(["Match_ID", "Team"], axis=1).corr()
+plt.figure(figsize=(11, 9))
+sns.heatmap(corr, vmin=-1, vmax=1, center=0, cmap=sns.diverging_palette(20, 220, n=200), annot=True)
+plt.xticks(rotation=45, horizontalalignment="right")
+plt.tight_layout()
+plt.savefig("../figures/2.2_heatmap.png", dpi=150)
+plt.show()
