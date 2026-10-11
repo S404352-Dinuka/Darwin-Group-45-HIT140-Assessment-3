@@ -171,3 +171,9 @@ iqr = q3 - q1
 lower = q1 - 1.5 * iqr
 upper = q3 + 1.5 * iqr
 print("Number of outliers:", len(goals[goals < lower]) + len(goals[goals > upper]))
+
+#95% confidence interval of the mean goals scored by a team in a World Cup match
+goals_mean = stats.tmean(goals)
+goals_error = stats.tstd(goals) / math.sqrt(len(goals))
+goals_low, goals_high = statsm._zconfint_generic(goals_mean, goals_error, alpha=0.05, alternative="two-sided")
+print("Goals Mean:", goals_mean, " 95% Confidence Interval:", goals_low, "to", goals_high)
