@@ -143,13 +143,8 @@ rows = []
 for i in range(len(wc_results)):
     team = wc_results["Team"].iloc[i]
     opp = wc_results["Opponent"].iloc[i]
-    rows.append([wc_results["Match_ID"].iloc[i], team,
-                 strong_conf[team], strong_conf[opp],
-                 playoff[team], playoff[opp],
-                 fr_games[team], fr_games[opp],
-                 fr_gf[team], fr_ga[opp],
-                 fr_ppg[team], fr_ppg[opp],
-                 wc_results["GF"].iloc[i]])
+    rows.append([wc_results["Match_ID"].iloc[i], team, strong_conf[team], strong_conf[opp], playoff[team], playoff[opp],
+                 fr_games[team], fr_games[opp], fr_gf[team], fr_ga[opp], fr_ppg[team], fr_ppg[opp], wc_results["GF"].iloc[i]])
 
 data = pd.DataFrame(rows, columns=["Match_ID", "Team", "Strong_Conf", "Opp_Strong_Conf",
                                    "Playoff", "Opp_Playoff", "Fr_Games", "Opp_Fr_Games",
@@ -234,10 +229,36 @@ plt.tight_layout()
 plt.savefig("../figures/2.2_heatmap.png", dpi=150)
 plt.show()
 
-#Fr_PPG is highly correlated (r > 0.7) with Fr_GF, and Opp_Fr_PPG is strongly correlated with Opp_Fr_GA
-#Friendly points per game is also already used in 2.1, and only 4 variables can be shared with 2.1
+#Fr_PPG is highly correlated (r > 0.7) with Fr_GF and Opp_Fr_PPG is strongly correlated with Opp_Fr_GA
+#Friendly points per game is also already used in 2.1 and only 4 variables can be shared with 2.1
 #So drop Fr_PPG and Opp_Fr_PPG and keep the goal based friendly variables
 print("Fr_PPG vs Fr_GF:", corr["Fr_PPG"]["Fr_GF"])
 print("Opp_Fr_PPG vs Opp_Fr_GA:", corr["Opp_Fr_PPG"]["Opp_Fr_GA"])
 data = data.drop(["Fr_PPG", "Opp_Fr_PPG"], axis=1)
 data.to_csv("../data/processed/regression_2_2_dataset.csv", index=False)
+
+#Divide the x and y variables and show the 8 used variables
+var_x = data.drop(["Match_ID", "Team", "Goals"], axis=1)
+var_y = data["Goals"]
+print("Explanatory variables:", var_x.keys())
+
+#Model 1 with all 8 variables using all the rows
+model = sm.OLS(var_y, sm.add_constant(var_x)).fit()
+print("Model 1 summary:")
+print(model.summary())
+
+#Model 2 with z score standardisation to see which variables have the biggest effect
+std_x = pd.DataFrame(StandardScaler().fit_transform(var_x), columns=var_x.columns)
+model = sm.OLS(var_y, sm.add_constant(std_x)).fit()
+print("Model 2 summary:")
+print(model.summary())
+
+#Creating the bar chart of the standardised coefficients
+plt.figure(figsize=(10, 5))
+plt.bar(var_x.keys(), model.params[1:])
+plt.ylabel("Standardised coefficient")
+plt.title("Effect of Each Variable on Goals Scored (bigger bar = stronger effect)")
+plt.xticks(rotation=20, horizontalalignment="right")
+plt.tight_layout()
+plt.savefig("../figures/2.2_coefficients.png", dpi=150)
+plt.show()
