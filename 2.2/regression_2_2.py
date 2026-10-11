@@ -212,18 +212,61 @@ plt.tight_layout()
 plt.savefig("../figures/2.2_histogram.png", dpi=300)
 plt.show()
 
-#Scatter plot of each candidate variable against goals and its Pearson correlation
+#Scatter plot of each numeric candidate against goals with a fitted line to check linearity
 columns = data.keys()[2:-1]
-plt.figure(figsize=(16, 7))
-for i in range(len(columns)):
-    r, p_value = stats.pearsonr(data[columns[i]], goals)
-    print(columns[i], " r =", r, " p-value =", p_value)
-    plt.subplot(2, 5, i + 1)
-    plt.scatter(data[columns[i]], goals)
-    plt.xlabel(columns[i])
+for column in columns:
+    r, p_value = stats.pearsonr(data[column], goals)
+    print(column, " r =", r, " p-value =", p_value)
+
+numeric_columns = []
+for column in columns:
+    if data[column].nunique() > 2:
+        numeric_columns.append(column)
+plt.figure(figsize=(14, 7.5))
+for i in range(len(numeric_columns)):
+    column = numeric_columns[i]
+    r, p_value = stats.pearsonr(data[column], goals)
+    line_model = LinearRegression()
+    line_model.fit(data[[column]], goals)
+    slope = line_model.coef_[0]
+    intercept = line_model.intercept_
+    x_line = np.linspace(data[column].min(), data[column].max(), 50)
+    plt.subplot(2, 3, i + 1)
+    plt.scatter(data[column], goals, alpha=0.4)
+    plt.plot(x_line, intercept + slope * x_line, color="red")
+    plt.title(column + "  (r = " + str(round(r, 2)) + ", p = " + str(round(p_value, 4)) + ")")
+    plt.xlabel(column)
     plt.ylabel("Goals")
+plt.suptitle("Numeric Candidate Variables vs Goals Scored (red line = linear fit)")
 plt.tight_layout()
-plt.savefig("../figures/2.2_scatter.png", dpi=150)
+plt.savefig("../figures/2.2_scatter.png", dpi=300)
+plt.show()
+
+#Mean goals with 95% confidence intervals for each yes/no variable, with a two sample (Welch) t test p-value
+binary_columns = ["Strong_Conf", "Opp_Strong_Conf", "Playoff", "Opp_Playoff"]
+plt.figure(figsize=(13, 4.5))
+for i in range(len(binary_columns)):
+    column = binary_columns[i]
+    means = []
+    errors = []
+    for value in [0, 1]:
+        group = goals[data[column] == value]
+        means.append(stats.tmean(group))
+        errors.append(1.96 * stats.tstd(group) / math.sqrt(len(group)))
+    yes = goals[data[column] == 1]
+    no = goals[data[column] == 0]
+    t_stats, p_val = stats.ttest_ind_from_stats(stats.tmean(yes), stats.tstd(yes), len(yes),
+                                                stats.tmean(no), stats.tstd(no), len(no), equal_var=False)
+    plt.subplot(1, 4, i + 1)
+    plt.bar(["No (0)", "Yes (1)"], means, yerr=errors, capsize=6, color=["#9bb7d4", "#1f5f99"])
+    plt.text(0, 0.12, str(round(means[0], 2)), ha="center")
+    plt.text(1, 0.12, str(round(means[1], 2)), ha="center", color="white")
+    plt.title(column + "\n(two-sided t test p = " + str(round(p_val, 3)) + ")")
+    plt.ylim(0, 3)
+    plt.ylabel("Mean goals (95% CI)")
+plt.suptitle("Mean Goals Scored for Each Yes/No Variable")
+plt.tight_layout()
+plt.savefig("../figures/2.2_binary_ttests.png", dpi=300)
 plt.show()
 
 #Heatmap of the correlation matrix to check collinearity
