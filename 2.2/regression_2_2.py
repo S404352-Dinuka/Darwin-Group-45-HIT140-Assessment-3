@@ -41,3 +41,33 @@ friendly_matches["Date"] = pd.to_datetime(friendly_matches["Date"])
 friendly_matches = friendly_matches[friendly_matches["Date"] < "2026-06-11"]
 print("Matches of World Cup:", world_cup.shape)
 print("Friendlies before the World Cup:", friendly_matches.shape)
+
+"""
+Reshape the data: each match becomes 2 rows (one per team) with GF (goals for), GA (goals against) and points.
+Home like "Mexico mx", Away like "za South Africa", Score like "2–0"
+Scores use an en dash, e.g. “2–0”. Shoot-outs look like “(3) 1–1 (4)”. Penalties are not goals, so that we keep only 1–1.
+"""
+results = []
+for match_table in [friendly_matches, world_cup]:
+    match_ids = []
+    team_list = []
+    opponents = []
+    goals_for = []
+    goals_against = []
+    team_points = []
+    for i in range(len(match_table)):
+        team1 = " ".join(match_table["Home"].iloc[i].split(" ")[:-1])
+        team2 = " ".join(match_table["Away"].iloc[i].split(" ")[1:])
+        score = match_table["Score"].iloc[i]
+        if "(" in score:
+            score = score.split(") ")[1].split(" (")[0]
+        goals1 = int(score.split("–")[0])
+        goals2 = int(score.split("–")[1])
+
+        #points: win = 3, draw = 1, loss = 0
+        if goals1 > goals2:
+            points = [3, 0]
+        elif goals1 == goals2:
+            points = [1, 1]
+        else:
+            points = [0, 3]
