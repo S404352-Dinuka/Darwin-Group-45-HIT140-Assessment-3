@@ -210,3 +210,17 @@ plt.xlabel("Goals")
 plt.ylabel("No. of Team-Matches (rows)")
 plt.savefig("../figures/2.2_histogram.png", dpi=150)
 plt.show()
+
+#Scatter plot of each candidate variable against goals and its Pearson correlation
+columns = data.keys()[2:-1]
+plt.figure(figsize=(16, 7))
+for i in range(len(columns)):
+    r, p_value = stats.pearsonr(data[columns[i]], goals)
+    print(columns[i], " r =", r, " p-value =", p_value)
+    plt.subplot(2, 5, i + 1)
+    plt.scatter(data[columns[i]], goals)
+    plt.xlabel(columns[i])
+    plt.ylabel("Goals")
+plt.tight_layout()
+plt.savefig("../figures/2.2_scatter.png", dpi=150)
+plt.show()
