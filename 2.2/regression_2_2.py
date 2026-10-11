@@ -264,10 +264,17 @@ plt.savefig("../figures/2.2_coefficients.png", dpi=150)
 plt.show()
 
 #Model 3 with the Yeo-Johnson transformation
-#It is only used on the variables with many values, not on the yes/no variables (0 and 1)
 yj_columns = ["Fr_Games","Opp_Fr_Games","Fr_GF","Opp_Fr_GA"]
 power_x = var_x.copy()
 power_x[yj_columns] = PowerTransformer().fit_transform(var_x[yj_columns])
 model = sm.OLS(var_y, sm.add_constant(power_x)).fit()
 print("Model 3 summary:")
 print(model.summary())
+
+#Model 4: sequentially remove variables with the highest p-value
+x_reduced = var_x
+for column in ["Playoff", "Fr_GF", "Opp_Strong_Conf"]:
+    x_reduced = x_reduced.drop([column], axis=1)
+    model = sm.OLS(var_y, sm.add_constant(x_reduced)).fit()
+    print("Model 4 summary after removing", column)
+    print(model.summary())
