@@ -89,3 +89,6 @@ print("World Cup rows (2 per match):", wc_results.shape)
 #Congo DR and Iraq are listed twice, so remove their earlier play-off round
 qualification = qualification[qualification["Method"] != "Defeated ng Nigeria"]
 qualification = qualification[qualification["Method"] != "Defeated ae United Arab Emirates"]
+
+#hosts have NaN in Comp, so replace NaN with an empty string
+qualification = qualification.fillna("")
