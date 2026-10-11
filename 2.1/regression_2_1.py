@@ -56,3 +56,31 @@ qual_data = qual_data[qual_data["Method"] != "Defeated ng Nigeria"]
 qual_data = qual_data[qual_data["Method"] != "Defeated ae United Arab Emirates"]
 qual_data = qual_data.fillna("")
 
+
+#Store each team's host, confederation and playoff details in dictionaries
+host = {}
+strong_conf = {}
+playoff = {}
+for i in range(len(qual_data)):
+    #Splits country code from country
+    team = " ".join(qual_data["Squad"].iloc[i].split(" ")[1:])
+    #Changing names to match other country data
+    if team == "Bosnia and Herzegovina":
+        team = "Bosnia–Herz"
+    if team == "United States":
+        team = "USA"
+    conf = qual_data["Confederation"].iloc[i]
+    comp = qual_data["Comp"].iloc[i]
+
+    host[team] = 0
+    if qual_data["Method"].iloc[i] == "Competition Host":
+        host[team] = 1
+    #Give 1 to UEFA and CONMEBOL teams and 0 to the other teams since these two have stronger confederation teams
+    strong_conf[team] = 0
+    if conf == "UEFA" or conf == "CONMEBOL":
+        strong_conf[team] = 1
+    playoff[team] = 0
+    #Teams that go through extra play off round to qualify gets one
+    if "Second round" in comp or "Fourth round" in comp or "Fifth round" in comp or "Inter-confederation" in comp:
+        playoff[team] = 1
+
