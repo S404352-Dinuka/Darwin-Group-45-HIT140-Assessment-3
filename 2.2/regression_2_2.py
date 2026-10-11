@@ -202,3 +202,11 @@ if p_val < 0.05:
     print("Reject Hypothesis")
 else:
     print("Do not reject Hypothesis")
+
+#Histogram of Goals to check the shape of the distribution
+plt.hist(goals, bins=int(goals.max() + 1), edgecolor="black")
+plt.title("Goals Scored by a Team in World Cup 2026 Matches")
+plt.xlabel("Goals")
+plt.ylabel("No. of Team-Matches (rows)")
+plt.savefig("../figures/2.2_histogram.png", dpi=150)
+plt.show()
