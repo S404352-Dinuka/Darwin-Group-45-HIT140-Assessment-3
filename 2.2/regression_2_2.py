@@ -71,3 +71,17 @@ for match_table in [friendly_matches, world_cup]:
             points = [1, 1]
         else:
             points = [0, 3]
+             
+        #append the home row and the away row (same Match_ID, GF and GA swapped)
+        match_ids = match_ids + [i + 1, i + 1]
+        team_list = team_list + [team1, team2]
+        opponents = opponents + [team2, team1]
+        goals_for = goals_for + [goals1, goals2]
+        goals_against = goals_against + [goals2, goals1]
+        team_points = team_points + points
+
+    results.append(pd.DataFrame({"Match_ID": match_ids, "Team": team_list, "Opponent": opponents,
+                                 "GF": goals_for, "GA": goals_against, "Points": team_points}))
+fr_results = results[0]
+wc_results = results[1]
+print("World Cup rows (2 per match):", wc_results.shape)
