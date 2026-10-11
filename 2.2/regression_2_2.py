@@ -163,3 +163,11 @@ goals = data["Goals"]
 print(data.drop(["Match_ID"], axis=1).describe())
 print("Median:", statistics.median(goals))
 print("Mode:", statistics.mode(goals))
+
+#Find the outliers of the goals using the IQR rule
+q1 = np.percentile(goals, 25)
+q3 = np.percentile(goals, 75)
+iqr = q3 - q1
+lower = q1 - 1.5 * iqr
+upper = q3 + 1.5 * iqr
+print("Number of outliers:", len(goals[goals < lower]) + len(goals[goals > upper]))
