@@ -204,3 +204,37 @@ low = q1 - 1.5 * iqr
 high = q3 + 1.5 * iqr
 print("Number of Goal Difference Outliers:", len(goal_diff[goal_diff < low]) + len(goal_diff[goal_diff > high]))
 
+
+#Create a heatmap to check the correlations between variables
+corr = data.drop(["Match_ID"], axis=1).corr()
+plt.figure(figsize=(11, 9))
+sns.heatmap(corr, vmin=-1, vmax=1, center=0, cmap=sns.diverging_palette(20, 220, n=200), annot=True)
+plt.xticks(rotation=45, horizontalalignment="right")
+plt.tight_layout()
+plt.savefig("../figures/2.1_heatmap.png", dpi=150)
+plt.show()
+
+#Create a histogram to show the different goal differences
+plt.hist(goal_diff, bins=int(goal_diff.max() - goal_diff.min() + 1), edgecolor="black")
+plt.title("Goal Difference in World Cup 2026 Matches")
+plt.xlabel("Goal Difference (Team1 - Team2)")
+plt.ylabel("No. of Matches")
+plt.savefig("../figures/2.1_histogram.png", dpi=150)
+plt.show()
+
+#Create scatter plots to check the relationship of variable and goal difference
+columns = data.keys()[1:-1]
+plt.figure(figsize=(16, 7))
+for i in range(len(columns)):
+    r, p_val = stats.pearsonr(data[columns[i]], goal_diff)
+    print("Variable:", columns[i])
+    print("Correlation:", r)
+    print("P-Val:", p_val)
+    plt.subplot(2, 5, i + 1)
+    plt.scatter(data[columns[i]], goal_diff)
+    plt.xlabel(columns[i])
+    plt.ylabel("Goal_Diff")
+plt.tight_layout()
+plt.savefig("../figures/2.1_scatter.png", dpi=150)
+plt.show()
+
