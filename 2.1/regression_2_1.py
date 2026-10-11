@@ -238,3 +238,38 @@ plt.tight_layout()
 plt.savefig("../figures/2.1_scatter.png", dpi=150)
 plt.show()
 
+
+#Check t test and say if the hypothesis is rejected
+def print_t_test(test_name, t_stats, p_val):
+    print(test_name)
+    print("T Stats:", t_stats)
+    print("P-Val:", p_val)
+    if p_val < 0.05:
+        print("Reject Hypothesis")
+    else:
+        print("Do not reject Hypothesis")
+
+#Check one sample t test, if the mean goal difference is different from 0
+t_stats, p_val = stats.ttest_1samp(goal_diff, 0)
+print_t_test("One Sample T Test:", t_stats, p_val)
+
+#Check two sample t test to compate if goal differences are based on friendly points
+better_fr = goal_diff[data["Fr_PPG_Diff"] > 0]
+other_fr = goal_diff[data["Fr_PPG_Diff"] <= 0]
+t_stats, p_val = stats.ttest_ind_from_stats(stats.tmean(better_fr), stats.tstd(better_fr), len(better_fr),
+                                            stats.tmean(other_fr), stats.tstd(other_fr), len(other_fr),
+                                            equal_var=False, alternative="greater")
+print_t_test("Two Sample T Test:", t_stats, p_val)
+
+
+#Check the correlation between friendly points, goals scored and goals conceded so keep friendly points and remove the other two variables
+print("Friendly Points and Goals Scored Correlation:", corr["Fr_PPG_Diff"]["Fr_GF_Diff"])
+print("Friendly Points and Goals Conceded Correlation:", corr["Fr_PPG_Diff"]["Fr_GA_Diff"])
+data = data.drop(["Fr_GF_Diff", "Fr_GA_Diff"], axis=1)
+
+#Divide the variables used for prediction and the actual goal difference
+x_data = data.drop(["Match_ID", "Goal_Diff"], axis=1)
+y_data = data["Goal_Diff"]
+print("Variables Used for Prediction:")
+print(x_data.keys())
+
