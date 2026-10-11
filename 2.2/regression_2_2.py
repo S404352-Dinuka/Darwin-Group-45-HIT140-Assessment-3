@@ -233,3 +233,11 @@ plt.xticks(rotation=45, horizontalalignment="right")
 plt.tight_layout()
 plt.savefig("../figures/2.2_heatmap.png", dpi=150)
 plt.show()
+
+#Fr_PPG is highly correlated (r > 0.7) with Fr_GF, and Opp_Fr_PPG is strongly correlated with Opp_Fr_GA
+#Friendly points per game is also already used in 2.1, and only 4 variables can be shared with 2.1
+#So drop Fr_PPG and Opp_Fr_PPG and keep the goal based friendly variables
+print("Fr_PPG vs Fr_GF:", corr["Fr_PPG"]["Fr_GF"])
+print("Opp_Fr_PPG vs Opp_Fr_GA:", corr["Opp_Fr_PPG"]["Opp_Fr_GA"])
+data = data.drop(["Fr_PPG", "Opp_Fr_PPG"], axis=1)
+data.to_csv("../data/processed/regression_2_2_dataset.csv", index=False)
