@@ -84,3 +84,55 @@ for i in range(len(qual_data)):
     if "Second round" in comp or "Fourth round" in comp or "Fifth round" in comp or "Inter-confederation" in comp:
         playoff[team] = 1
 
+
+#Store each match as two rows to get the stats for both teams separately
+team_tables = []
+for table in [fr_data, wc_data]:
+    team_list = []
+    opp_list = []
+    date_list = []
+    gf_list = []
+    ga_list = []
+    points_list = []
+    for i in range(len(table)):
+        #Changing names to match other country data and get the match scores
+        team1 = " ".join(table["Home"].iloc[i].split(" ")[:-1])
+        team2 = " ".join(table["Away"].iloc[i].split(" ")[1:])
+        score = table["Score"].iloc[i]
+        #Remove the penalty shootout scores if they are present
+        if "(" in score:
+            score = score.split(") ")[1].split(" (")[0]
+        goals1 = int(score.split("–")[0])
+        goals2 = int(score.split("–")[1])
+
+        #Give 3 points for a win, 1 for a draw and 0 for a loss
+        if goals1 > goals2:
+            points = [3, 0]
+        elif goals1 == goals2:
+            points = [1, 1]
+        else:
+            points = [0, 3]
+
+        #Add the match results for both teams into their separate lists
+        team_list = team_list + [team1, team2]
+        opp_list = opp_list + [team2, team1]
+        date_list = date_list + [table["Date"].iloc[i], table["Date"].iloc[i]]
+        gf_list = gf_list + [goals1, goals2]
+        ga_list = ga_list + [goals2, goals1]
+        points_list = points_list + points
+
+    team_tables.append(pd.DataFrame({"Team": team_list, "Opponent": opp_list, "Date": date_list,
+                                     "GF": gf_list, "GA": ga_list, "Points": points_list}))
+fr_results = team_tables[0]
+wc_results = team_tables[1]
+
+
+#Check if the opponent in each friendly also qualified for the World Cup
+opp_wc_list = []
+for opponent in fr_results["Opponent"]:
+    if opponent in host:
+        opp_wc_list.append(1)
+    else:
+        opp_wc_list.append(0)
+fr_results["Opp_WC"] = opp_wc_list
+
