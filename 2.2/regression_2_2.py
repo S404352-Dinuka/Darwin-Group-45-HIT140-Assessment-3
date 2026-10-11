@@ -285,3 +285,51 @@ model_names = ["Baseline", "M1: All 8", "M2: Standardised", "M3: Yeo-Johnson",
 model_x = [var_x, var_x, var_x, var_x, x_reduced, x_reduced, var_x, var_x]
 model_scale = ["none", "none", "standard", "yeo-johnson", "none", "yeo-johnson", "standard", "none"]
 model_algo = ["mean", "linear", "linear", "linear", "linear", "linear", "ridge", "forest"]
+
+#evaluate all models on 20 train/test splits and the knockout forecast test
+rmse_lists = [[], [], [], [], [], [], [], []]
+r2_lists = [[], [], [], [], [], [], [], []]
+forecast_rmse = []
+forecast_r2 = []
+for seed in range(21):
+    for m in range(8):
+        if seed < 20:
+            train_x, test_x, train_y, test_y = train_test_split(model_x[m], var_y, test_size=0.4, random_state=seed)
+        else:
+            train_x = model_x[m][data["Match_ID"] <= 72]
+            test_x = model_x[m][data["Match_ID"] > 72]
+            train_y = var_y[data["Match_ID"] <= 72]
+            test_y = var_y[data["Match_ID"] > 72]
+        if model_scale[m] == "standard":
+            scaler = StandardScaler()
+            train_x = scaler.fit_transform(train_x)
+            test_x = scaler.transform(test_x)
+        if model_scale[m] == "yeo-johnson":
+            columns = []
+            for column in train_x.keys():
+                if column in yj_columns:
+                    columns.append(column)
+            scaler = PowerTransformer()
+            train_x = train_x.copy()
+            test_x = test_x.copy()
+            train_x[columns] = scaler.fit_transform(train_x[columns])
+            test_x[columns] = scaler.transform(test_x[columns])
+        if model_algo[m] == "mean":
+            pred_y = [np.mean(train_y)] * len(test_y)
+        else:
+            if model_algo[m] == "linear":
+                model = LinearRegression()
+            if model_algo[m] == "ridge":
+                model = Ridge(alpha=10)
+            if model_algo[m] == "forest":
+                model = RandomForestRegressor(n_estimators=100, min_samples_leaf=5, random_state=0)
+            model.fit(train_x, train_y)
+            pred_y = model.predict(test_x)
+        rmse = math.sqrt(metrics.mean_squared_error(test_y, pred_y))
+        r2 = metrics.r2_score(test_y, pred_y)
+        if seed < 20:
+            rmse_lists[m].append(rmse)
+            r2_lists[m].append(r2)
+        else:
+            forecast_rmse.append(rmse)
+            forecast_r2.append(r2)
