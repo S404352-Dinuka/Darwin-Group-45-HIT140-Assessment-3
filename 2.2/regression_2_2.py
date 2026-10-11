@@ -157,3 +157,9 @@ data = pd.DataFrame(rows, columns=["Match_ID", "Team", "Strong_Conf", "Opp_Stron
 print(data.info())
 print(data.head())
 print("Rows and Columns:", data.shape)
+
+#Descriptive statistics: count, mean, std, min, quartiles and max, plus median and mode of Goals
+goals = data["Goals"]
+print(data.drop(["Match_ID"], axis=1).describe())
+print("Median:", statistics.median(goals))
+print("Mode:", statistics.mode(goals))
