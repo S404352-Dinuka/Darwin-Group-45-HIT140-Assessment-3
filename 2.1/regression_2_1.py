@@ -273,3 +273,23 @@ y_data = data["Goal_Diff"]
 print("Variables Used for Prediction:")
 print(x_data.keys())
 
+#Make model 1 using all 8 variables
+model1 = sm.OLS(y_data, sm.add_constant(x_data)).fit()
+print("Model 1 Regression Summary:")
+print(model1.summary())
+
+#Make model 2 by standardising the variables to compare their effects
+x_std = pd.DataFrame(StandardScaler().fit_transform(x_data), columns=x_data.columns)
+model2 = sm.OLS(y_data, sm.add_constant(x_std)).fit()
+print("Model 2 Standardised Regression Summary:")
+print(model2.summary())
+
+#Create a bar chart to compare the coefficients: model 2
+plt.figure(figsize=(10, 5))
+plt.bar(x_data.keys(), model2.params[1:])
+plt.ylabel("Standardised coefficient")
+plt.title("Effect of Each Variable on Goal Difference (bigger bar = stronger effect)")
+plt.xticks(rotation=20, horizontalalignment="right")
+plt.tight_layout()
+plt.savefig("../figures/2.1_coefficients.png", dpi=150)
+plt.show()
