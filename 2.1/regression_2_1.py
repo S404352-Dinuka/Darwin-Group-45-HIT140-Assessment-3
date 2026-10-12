@@ -351,3 +351,25 @@ def test_model(m, train_x, test_x, train_y, test_y):
     rmse = math.sqrt(metrics.mean_squared_error(test_y, pred_y))
     r2 = metrics.r2_score(test_y, pred_y)
     return rmse, r2
+
+#Test all the models using 20 random splits 60 to 40
+rmse_scores = [[], [], [], [], [], [], [], []]
+r2_scores = [[], [], [], [], [], [], [], []]
+for seed in range(20):
+    for m in range(8):
+        train_x, test_x, train_y, test_y = train_test_split(model_data[m], y_data, test_size=0.4, random_state=seed)
+        rmse, r2 = test_model(m, train_x, test_x, train_y, test_y)
+        rmse_scores[m].append(rmse)
+        r2_scores[m].append(r2)
+
+#Test the models using the 72 group stage matches for training and the 32 knockout matches for testing
+knock_rmse = []
+knock_r2 = []
+for m in range(8):
+    train_x = model_data[m][data["Match_ID"] <= 72]
+    test_x = model_data[m][data["Match_ID"] > 72]
+    train_y = y_data[data["Match_ID"] <= 72]
+    test_y = y_data[data["Match_ID"] > 72]
+    rmse, r2 = test_model(m, train_x, test_x, train_y, test_y)
+    knock_rmse.append(rmse)
+    knock_r2.append(r2)
