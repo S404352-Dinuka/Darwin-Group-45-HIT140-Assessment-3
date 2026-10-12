@@ -373,3 +373,29 @@ for m in range(8):
     rmse, r2 = test_model(m, train_x, test_x, train_y, test_y)
     knock_rmse.append(rmse)
     knock_r2.append(r2)
+
+#Calculate the average RMSE, normalised RMSE and R2 for each model and using a one sample t test to compare if each model is better than model 1 among the 20 splits
+avg_rmse = []
+norm_rmse = []
+avg_r2 = []
+p_vals = []
+rmse_data = pd.DataFrame()
+for m in range(8):
+    avg_rmse.append(np.mean(rmse_scores[m]))
+    norm_rmse.append(np.mean(rmse_scores[m]) / (y_data.max() - y_data.min()))
+    avg_r2.append(np.mean(r2_scores[m]))
+    rmse_data[model_names[m]] = rmse_scores[m]
+    difference = []
+    for i in range(20):
+        difference.append(rmse_scores[m][i] - rmse_scores[1][i])
+    if m == 1 or m == 2:
+        p_vals.append("same as M1")
+    else:
+        t_stats, p_val = stats.ttest_1samp(difference, 0)
+        p_vals.append(round(p_val, 4))
+
+model_results = pd.DataFrame({"Model": model_names, "Average RMSE": avg_rmse, "RMSE (Normalised)": norm_rmse, "Average R2": avg_r2,
+                              "P-Val vs M1": p_vals, "Knockout RMSE": knock_rmse, "Knockout R2": knock_r2})
+
+print("Model Performance from 20 Random Splits and Knockout Test:")
+print(model_results)
