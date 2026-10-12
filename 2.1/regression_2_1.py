@@ -293,3 +293,19 @@ plt.xticks(rotation=20, horizontalalignment="right")
 plt.tight_layout()
 plt.savefig("../figures/2.1_coefficients.png", dpi=150)
 plt.show()
+
+#Make model 3 using Yeo-Johnson transformation and apply the transformation to the picked variables only
+yj_cols = ["Fr_PPG_Diff", "Fr_Opp_Diff", "WC_PPG_Diff", "WC_GF_Diff", "WC_GA_Diff"]
+x_yj = x_data.copy()
+x_yj[yj_cols] = PowerTransformer().fit_transform(x_data[yj_cols])
+model3 = sm.OLS(y_data, sm.add_constant(x_yj)).fit()
+print("Model 3 Yeo-Johnson Regression Summary:")
+print(model3.summary())
+
+#Select model 4 variables by removing the selected variables one at a time and each removed variable had the highest p-value at that step
+x_final = x_data
+for column in ["Fr_Opp_Diff", "WC_PPG_Diff", "WC_GF_Diff", "Host_Diff"]:
+    x_final = x_final.drop([column], axis=1)
+    model4 = sm.OLS(y_data, sm.add_constant(x_final)).fit()
+    print("Model 4 Summary After Removing:", column)
+    print(model4.summary())
