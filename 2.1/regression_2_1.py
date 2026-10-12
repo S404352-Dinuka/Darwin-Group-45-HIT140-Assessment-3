@@ -309,3 +309,45 @@ for column in ["Fr_Opp_Diff", "WC_PPG_Diff", "WC_GF_Diff", "Host_Diff"]:
     model4 = sm.OLS(y_data, sm.add_constant(x_final)).fit()
     print("Model 4 Summary After Removing:", column)
     print(model4.summary())
+
+#Creating models with names and variables, how they change, and model types
+model_names = ["Baseline", "M1: All 8", "M2: Standardised", "M3: Yeo-Johnson",
+               "M4: 4 significant", "M5: 4 sig. + Yeo-Johnson", "Ridge: All 8", "Random Forest: All 8"]
+model_data = [x_data, x_data, x_data, x_data, x_final, x_final, x_data, x_data]
+model_scale = ["none", "none", "standard", "yeo-johnson", "none", "yeo-johnson", "standard", "none"]
+model_type = ["mean", "linear", "linear", "linear", "linear", "linear", "ridge", "forest"]
+
+#Function to train one model to get RSME and R2 on the test data
+def test_model(m, train_x, test_x, train_y, test_y):
+    #Standardise the variables
+    if model_scale[m] == "standard":
+        scaler = StandardScaler()
+        train_x = scaler.fit_transform(train_x)
+        test_x = scaler.transform(test_x)
+    #Use yeo johhnson on select variables
+    if model_scale[m] == "yeo-johnson":
+        columns = []
+        for column in train_x.keys():
+            if column in yj_cols:
+                columns.append(column)
+        scaler = PowerTransformer()
+        train_x = train_x.copy()
+        test_x = test_x.copy()
+        train_x[columns] = scaler.fit_transform(train_x[columns])
+        test_x[columns] = scaler.transform(test_x[columns])
+    #Predict traning average per match to get baseline
+    if model_type[m] == "mean":
+        pred_y = [np.mean(train_y)] * len(test_y)
+    else:
+        if model_type[m] == "linear":
+            model = LinearRegression()
+        if model_type[m] == "ridge":
+            model = Ridge(alpha=10)
+        if model_type[m] == "forest":
+            model = RandomForestRegressor(n_estimators=100, min_samples_leaf=5, random_state=0)
+        model.fit(train_x, train_y)
+        pred_y = model.predict(test_x)
+    #Check how close predictions are to real results
+    rmse = math.sqrt(metrics.mean_squared_error(test_y, pred_y))
+    r2 = metrics.r2_score(test_y, pred_y)
+    return rmse, r2
