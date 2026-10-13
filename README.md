@@ -78,3 +78,18 @@ python regression_2_2.py
 - seaborn
 - scikit-learn
 
+## Additional References
+
+In addition to the weekly learning materials, the following references were used for Python implementation and visualisation support:
+
+- [Python 3 Documentation](https://docs.python.org/3/)
+- [Pandas Documentation](https://pandas.pydata.org/docs/)
+- [NumPy Documentation](https://numpy.org/doc/stable/)
+- [SciPy Documentation](https://docs.scipy.org/doc/scipy/)
+- [statsmodels Documentation](https://www.statsmodels.org/stable/)
+- [Matplotlib Documentation](https://matplotlib.org/stable/)
+- [seaborn Documentation](https://seaborn.pydata.org/)
+- [scikit-learn – Ridge](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.Ridge.html)
+- [scikit-learn – RandomForestRegressor](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestRegressor.html)
+- [scikit-learn – train_test_split](https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.train_test_split.html)
+- [scikit-learn – Common pitfalls (data leakage)](https://scikit-learn.org/stable/common_pitfalls.html)
