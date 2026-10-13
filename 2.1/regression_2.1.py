@@ -273,3 +273,170 @@ y_data = data["Goal_Diff"]
 print("Variables Used for Prediction:")
 print(x_data.keys())
 
+#Make model 1 using all 8 variables
+model1 = sm.OLS(y_data, sm.add_constant(x_data)).fit()
+print("Model 1 Regression Summary:")
+print(model1.summary())
+
+#Make model 2 by standardising the variables to compare their effects
+x_std = pd.DataFrame(StandardScaler().fit_transform(x_data), columns=x_data.columns)
+model2 = sm.OLS(y_data, sm.add_constant(x_std)).fit()
+print("Model 2 Standardised Regression Summary:")
+print(model2.summary())
+
+#Create a bar chart to compare the coefficients: model 2
+plt.figure(figsize=(10, 5))
+plt.bar(x_data.keys(), model2.params[1:])
+plt.ylabel("Standardised coefficient")
+plt.title("Effect of Each Variable on Goal Difference (bigger bar = stronger effect)")
+plt.xticks(rotation=20, horizontalalignment="right")
+plt.tight_layout()
+plt.savefig("../figures/2.1_coefficients.png", dpi=150)
+plt.show()
+
+#Make model 3 using Yeo-Johnson transformation and apply the transformation to the picked variables only
+yj_cols = ["Fr_PPG_Diff", "Fr_Opp_Diff", "WC_PPG_Diff", "WC_GF_Diff", "WC_GA_Diff"]
+x_yj = x_data.copy()
+x_yj[yj_cols] = PowerTransformer().fit_transform(x_data[yj_cols])
+model3 = sm.OLS(y_data, sm.add_constant(x_yj)).fit()
+print("Model 3 Yeo-Johnson Regression Summary:")
+print(model3.summary())
+
+#Select model 4 variables by removing the selected variables one at a time and each removed variable had the highest p-value at that step
+x_final = x_data
+for column in ["Fr_Opp_Diff", "WC_PPG_Diff", "WC_GF_Diff", "Host_Diff"]:
+    x_final = x_final.drop([column], axis=1)
+    model4 = sm.OLS(y_data, sm.add_constant(x_final)).fit()
+    print("Model 4 Summary After Removing:", column)
+    print(model4.summary())
+
+#Creating models with names and variables, how they change, and model types
+model_names = ["Baseline", "M1: All 8", "M2: Standardised", "M3: Yeo-Johnson",
+               "M4: 4 significant", "M5: 4 sig. + Yeo-Johnson", "Ridge: All 8", "Random Forest: All 8"]
+model_data = [x_data, x_data, x_data, x_data, x_final, x_final, x_data, x_data]
+model_scale = ["none", "none", "standard", "yeo-johnson", "none", "yeo-johnson", "standard", "none"]
+model_type = ["mean", "linear", "linear", "linear", "linear", "linear", "ridge", "forest"]
+
+#Function to train one model to get RSME and R2 on the test data
+def test_model(m, train_x, test_x, train_y, test_y):
+    #Standardise the variables
+    if model_scale[m] == "standard":
+        scaler = StandardScaler()
+        train_x = scaler.fit_transform(train_x)
+        test_x = scaler.transform(test_x)
+    #Use yeo johhnson on select variables
+    if model_scale[m] == "yeo-johnson":
+        columns = []
+        for column in train_x.keys():
+            if column in yj_cols:
+                columns.append(column)
+        scaler = PowerTransformer()
+        train_x = train_x.copy()
+        test_x = test_x.copy()
+        train_x[columns] = scaler.fit_transform(train_x[columns])
+        test_x[columns] = scaler.transform(test_x[columns])
+    #Predict traning average per match to get baseline
+    if model_type[m] == "mean":
+        pred_y = [np.mean(train_y)] * len(test_y)
+    else:
+        if model_type[m] == "linear":
+            model = LinearRegression()
+        if model_type[m] == "ridge":
+            model = Ridge(alpha=10)
+        if model_type[m] == "forest":
+            model = RandomForestRegressor(n_estimators=100, min_samples_leaf=5, random_state=0)
+        model.fit(train_x, train_y)
+        pred_y = model.predict(test_x)
+    #Check how close predictions are to real results
+    rmse = math.sqrt(metrics.mean_squared_error(test_y, pred_y))
+    r2 = metrics.r2_score(test_y, pred_y)
+    return rmse, r2
+
+#Test all the models using 20 random splits 60 to 40
+rmse_scores = [[], [], [], [], [], [], [], []]
+r2_scores = [[], [], [], [], [], [], [], []]
+for seed in range(20):
+    for m in range(8):
+        train_x, test_x, train_y, test_y = train_test_split(model_data[m], y_data, test_size=0.4, random_state=seed)
+        rmse, r2 = test_model(m, train_x, test_x, train_y, test_y)
+        rmse_scores[m].append(rmse)
+        r2_scores[m].append(r2)
+
+#Test the models using the 72 group stage matches for training and the 32 knockout matches for testing
+knock_rmse = []
+knock_r2 = []
+for m in range(8):
+    train_x = model_data[m][data["Match_ID"] <= 72]
+    test_x = model_data[m][data["Match_ID"] > 72]
+    train_y = y_data[data["Match_ID"] <= 72]
+    test_y = y_data[data["Match_ID"] > 72]
+    rmse, r2 = test_model(m, train_x, test_x, train_y, test_y)
+    knock_rmse.append(rmse)
+    knock_r2.append(r2)
+
+#Calculate the average RMSE, normalised RMSE and R2 for each model and using a one sample t test to compare if each model is better than model 1 among the 20 splits
+avg_rmse = []
+norm_rmse = []
+avg_r2 = []
+p_vals = []
+rmse_data = pd.DataFrame()
+for m in range(8):
+    avg_rmse.append(np.mean(rmse_scores[m]))
+    norm_rmse.append(np.mean(rmse_scores[m]) / (y_data.max() - y_data.min()))
+    avg_r2.append(np.mean(r2_scores[m]))
+    rmse_data[model_names[m]] = rmse_scores[m]
+    difference = []
+    for i in range(20):
+        difference.append(rmse_scores[m][i] - rmse_scores[1][i])
+    if m == 1 or m == 2:
+        p_vals.append("same as M1")
+    else:
+        t_stats, p_val = stats.ttest_1samp(difference, 0)
+        p_vals.append(round(p_val, 4))
+
+model_results = pd.DataFrame({"Model": model_names, "Average RMSE": avg_rmse, "RMSE (Normalised)": norm_rmse, "Average R2": avg_r2,
+                              "P-Val vs M1": p_vals, "Knockout RMSE": knock_rmse, "Knockout R2": knock_r2})
+
+print("Model Performance from 20 Random Splits and Knockout Test:")
+print(model_results)
+
+#Create a box plot to show to compare the RMSE results from all 20 splits
+plt.figure(figsize=(10, 6))
+sns.boxplot(data=rmse_data, orient="h")
+plt.title("RMSE of Each Model over 20 Train/Test Splits (lower is better)")
+plt.xlabel("RMSE (goals)")
+plt.tight_layout()
+plt.savefig("../figures/2.1_rmse_boxplot.png", dpi=150)
+plt.show()
+
+#Show the model 4 using the 4 selected variables and all the matches
+print("Final Model 4 Regression Summary:")
+print(model4.summary())
+
+#Create graphs to show the comparison of the actual and predicted goal differences and show the errors
+train_x, test_x, train_y, test_y = train_test_split(x_final, y_data, test_size=0.4, random_state=0)
+model = LinearRegression()
+model.fit(train_x, train_y)
+pred_y = model.predict(test_x)
+residuals = test_y - pred_y
+plt.figure(figsize=(11, 4.5))
+plt.subplot(1, 2, 1)
+plt.scatter(test_y, pred_y)
+plt.plot([-4, 6], [-4, 6], color="red")
+plt.title("Final Model: Actual vs Predicted Goal Difference")
+plt.xlabel("Actual Goal Difference")
+plt.ylabel("Predicted Goal Difference")
+plt.subplot(1, 2, 2)
+plt.scatter(pred_y, residuals)
+plt.plot([min(pred_y), max(pred_y)], [0, 0], color="red")
+plt.title("Residuals (should be spread evenly around 0)")
+plt.xlabel("Predicted Goal Difference")
+plt.ylabel("Residual (Actual - Predicted)")
+plt.tight_layout()
+plt.savefig("../figures/2.1_final_model.png", dpi=150)
+plt.show()
+
+#Save final data and models figures
+data.to_csv("../data/processed/regression_2_1_dataset.csv", index=False)
+model_results.to_csv("../figures/2.1_model_comparison.csv", index=False)
+print("Cleaned Datasets Saved!")
