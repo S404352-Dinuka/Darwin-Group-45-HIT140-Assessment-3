@@ -413,7 +413,7 @@ plt.show()
 print("Final Model 4 Regression Summary:")
 print(model4.summary())
 
-#Create graphs to show the comparison of the actual and predicted goal differences and show the errors
+#Create graphs to show the comparison of the actual and predicted goal differences and show errors
 train_x, test_x, train_y, test_y = train_test_split(x_final, y_data, test_size=0.4, random_state=0)
 model = LinearRegression()
 model.fit(train_x, train_y)
