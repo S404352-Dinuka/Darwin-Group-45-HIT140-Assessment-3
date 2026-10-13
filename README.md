@@ -1,2 +1,80 @@
-# Darwin-Group-45-HIT140-Assessment-3
-Repository for HIT140 Assessment 3 – Darwin Group 45
+# Darwin Group 45 – HIT140 Assessment 3
+
+## Project Overview
+
+This repository contains the HIT140 Assessment 3 group project for Darwin Group 45.
+
+The project uses linear regression to predict FIFA World Cup 2026 results using only information available before each match was played:
+
+- **Linear Regression 2.1** predicts the **goal difference** between the two teams in each of the 104 World Cup matches (104 rows, 8 explanatory variables).
+- **Linear Regression 2.2** predicts the **number of goals scored by a team** in a match (208 rows – one per team per match, 8 explanatory variables). At most 4 of its variables are shared with 2.1, as required by the brief.
+
+Both tasks include data cleaning, exploratory data analysis (descriptive statistics, outliers, confidence intervals, t-tests, correlation), multiple linear regression with optimisation (standardisation, Yeo-Johnson and log transformations, collinearity removal and backward elimination), and a comparison with competing algorithms (Ridge regression and random forest).
+
+## Group Members
+
+| Student ID | Name |
+|---|---|
+| S404352 | Dinuka Dhaneshani Mathangaweera |
+| S401456 | Sehan Hansaja Udayakantha Panik Mudiyanselage |
+| S401680 | BalaTripuraSundari Polineni |
+| S401279 | Prabodha Sathsarani Aththanayake Aththanayake Boralage |
+
+## Repository Structure
+
+```text
+Darwin-Group-45-HIT140-Assessment-3/
+│
+├── 2.1/
+│   └── regression_2.1.py          # Linear Regression 2.1 – goal difference
+│
+├── 2.2/
+│   └── regression_2_2.py          # Linear Regression 2.2 – goals scored by a team
+│
+├── data/
+│   ├── raw/                       # Original FBref datasets (CSV)
+│   └── processed/                 # Final modelling datasets created by the scripts
+│
+└── figures/                       # Charts and model comparison tables created by the scripts
+```
+
+- **2.1/** and **2.2/** – one Python script per task (data cleaning, EDA and modelling)
+- **data/raw/** – the three original FBref datasets
+- **data/processed/** – `regression_2_1_dataset.csv` (104 rows) and `regression_2_2_dataset.csv` (208 rows)
+- **figures/** – all charts (`.png`) and the model comparison tables (`2.1_model_comparison.csv`, `2.2_model_comparison.csv`)
+
+## Data Source
+
+All data was downloaded from [FBref](https://fbref.com/) (one of the recommended sources in the brief):
+
+- 2026 World Cup Scores & Fixtures
+- 2026 International Friendlies Scores & Fixtures (only friendlies played before 11 June 2026 are used)
+- 2026 World Cup Qualifications
+
+## How to Run
+
+1. Install the packages listed under Requirements.
+2. Run each script **from inside its own folder**, because the scripts read and write files using relative paths (`../data/` and `../figures/`):
+
+```bash
+cd 2.1
+python regression_2.1.py
+
+cd ../2.2
+python regression_2_2.py
+```
+
+3. Each chart opens in a window; close it to continue. The 2.2 script takes about 30 seconds because every model is tested on 20 train/test splits plus a knockout forecast test.
+4. Outputs are saved to `data/processed/` and `figures/`. The results match Tables 2 and 4 in the report.
+
+## Requirements
+
+- Python 3.10+
+- pandas
+- numpy
+- scipy
+- statsmodels
+- matplotlib
+- seaborn
+- scikit-learn
+
