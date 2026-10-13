@@ -403,7 +403,7 @@ print(model_results)
 #Create a box plot to show to compare the RMSE results from all 20 splits
 plt.figure(figsize=(10, 6))
 sns.boxplot(data=rmse_data, orient="h")
-plt.title("RMSE of Each Model over 20 Train/Test Splits (lower is better)")
+plt.title("RMSE of Each Model over 20 Train/Test Splits")
 plt.xlabel("RMSE (goals)")
 plt.tight_layout()
 plt.savefig("../figures/2.1_rmse_boxplot.png", dpi=150)
