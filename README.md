@@ -51,22 +51,6 @@ All data was downloaded from [FBref](https://fbref.com/) (one of the recommended
 - 2026 International Friendlies Scores & Fixtures (only friendlies played before 11 June 2026 are used)
 - 2026 World Cup Qualifications
 
-## How to Run
-
-1. Install the packages listed under Requirements.
-2. Run each script **from inside its own folder**, because the scripts read and write files using relative paths (`../data/` and `../figures/`):
-
-```bash
-cd 2.1
-python regression_2.1.py
-
-cd ../2.2
-python regression_2_2.py
-```
-
-3. Each chart opens in a window; close it to continue. The 2.2 script takes about 30 seconds because every model is tested on 20 train/test splits plus a knockout forecast test.
-4. Outputs are saved to `data/processed/` and `figures/`. The results match Tables 2 and 4 in the report.
-
 ## Requirements
 
 - Python 3.10+
